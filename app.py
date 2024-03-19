@@ -1,8 +1,37 @@
 #Importing Libraries
+import math
 import streamlit as st
 import pickle
 import numpy as np
+import requests
+import url
 
+def get_laptop_price(company,cpu,gpu,hdd,ips,os,ram,resolution,screen_size,ssd,touchscreen,type,weight):
+    data = {
+        "company": company,
+        "type": type,
+        "ram": int(ram),
+        "weight": weight,
+        "touchscreen": int(touchscreen),
+        "ips": int(ips),
+        "ppi": int(ppi),
+        "cpu": cpu,
+        "hdd": int(hdd),
+        "ssd": int(ssd),
+        "gpu": gpu,
+        "os": os,
+        "resolution":resolution,
+        "screen_size":screen_size
+    }
+
+    print(data)
+    response = requests.post(url.getUrl(), json=data)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": "Failed to get price. Status code: {}".format(response.status_code)}
+
+    
 st.set_page_config(page_title="Laptop Price Predictor", page_icon="💻",
                    layout="wide")
 
@@ -43,7 +72,7 @@ with right_column:
 left_column, middle_column, right_column = st.columns(3)
 with left_column:
     # screen size
-    Screen_size = st.number_input("Screen Size (in Inches)")
+    screen_size = st.number_input("Screen Size (in Inches)")
 
 with middle_column:
     # resolution
@@ -83,11 +112,7 @@ if st.button("Predict Price"):
 
     X_res=int(resolution.split("x")[0])
     Y_res=int(resolution.split('x')[1])
-    ppi=((X_res ** 2)+(Y_res ** 2))**0.5/Screen_size
-    query=np.array([company, type, ram, weight, touchscreen, ips, ppi, cpu, hdd, ssd, gpu, os])
-
-    query=query.reshape(1, 12)
-    st.title("The Predicted Price of Laptop = Rs "+str(int(np.exp(pipe.predict(query)[0]))))
-
-
-
+    ppi=((X_res ** 2)+(Y_res ** 2))**0.5/float(screen_size)
+    
+    result = get_laptop_price(company,cpu,gpu,hdd,ips,os,ram,resolution,screen_size,ssd,touchscreen,type,weight)
+    st.title("The Predicted Price of Laptop = Rs "+str(round(result["data"][1]["price"])))
